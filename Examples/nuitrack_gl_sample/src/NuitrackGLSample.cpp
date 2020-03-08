@@ -3,6 +3,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <sstream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 using namespace tdv::nuitrack;
 
@@ -311,7 +317,72 @@ void NuitrackGLSample::onSkeletonUpdate(SkeletonData::Ptr userSkeletons)
 	for (auto skeleton: skeletons)
 	{
 		drawSkeleton(skeleton.joints);
+		sendSkeletonViaUdp(skeleton.id, skeleton.joints);
 	}
+}
+
+// Send skeleton data via udp
+// Reference:
+// - [C++ÅÌÈPÈUDPÊM](http://shibafu3.hatenablog.com/entry/2018/08/23/151237)
+// - [My tests on Unity and questions](https://community.nuitrack.com/t/my-tests-on-unity-and-questions/51/2)
+void NuitrackGLSample::sendSkeletonViaUdp(const int skeleton_id, const std::vector<Joint>& joints)
+{
+	int sock;
+	struct sockaddr_in addr;
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(12345);
+	addr.sin_addr.s_addr = inet_addr("192.168.0.5");
+
+	// Create data for a skeleton
+	std::stringstream ss;
+	ss << _skeletonTracker->getTimestamp() << "," << skeleton_id
+		<< "," << getRealCoordinateString(joints[JOINT_HEAD])
+		<< "," << getRealCoordinateString(joints[JOINT_NECK])
+		<< "," << getRealCoordinateString(joints[JOINT_TORSO])
+		<< "," << getRealCoordinateString(joints[JOINT_WAIST])
+
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_COLLAR])
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_SHOULDER])
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_ELBOW])
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_WRIST])
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_HAND])
+
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_COLLAR])
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_SHOULDER])
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_ELBOW])
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_WRIST])
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_HAND])
+
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_HIP])
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_KNEE])
+		<< "," << getRealCoordinateString(joints[JOINT_LEFT_ANKLE])
+
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_HIP])
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_KNEE])
+		<< "," << getRealCoordinateString(joints[JOINT_RIGHT_ANKLE])
+
+		<< "," << joints[JOINT_HEAD].orient.matrix[0]
+		<< "," << joints[JOINT_HEAD].orient.matrix[1]
+		<< "," << joints[JOINT_HEAD].orient.matrix[2]
+		<< "," << joints[JOINT_HEAD].orient.matrix[3]
+		<< "," << joints[JOINT_HEAD].orient.matrix[4]
+		<< "," << joints[JOINT_HEAD].orient.matrix[5]
+		<< "," << joints[JOINT_HEAD].orient.matrix[6]
+		<< "," << joints[JOINT_HEAD].orient.matrix[7]
+		<< "," << joints[JOINT_HEAD].orient.matrix[8];
+
+	sendto(sock, ss.str().c_str(), ss.str().length(), 0, (struct sockaddr *)&addr, sizeof(addr));
+	close(sock);
+}
+
+std::string NuitrackGLSample::getRealCoordinateString(const Joint& joint)
+{
+	std::stringstream ss;
+	ss << joint.confidence << "," << joint.real.x << "," << joint.real.y << "," << joint.real.z;
+	return ss.str();
 }
 
 // Prepare visualization of tracked hands

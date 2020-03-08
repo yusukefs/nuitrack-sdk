@@ -89,6 +89,8 @@ private:
 	void onNewRGBFrame(tdv::nuitrack::RGBFrame::Ptr frame);
 	void onUserUpdate(tdv::nuitrack::UserFrame::Ptr frame);
 	void onSkeletonUpdate(tdv::nuitrack::SkeletonData::Ptr userSkeletons);
+	void sendSkeletonViaUdp(const int skeleton_id, const std::vector<tdv::nuitrack::Joint>& joints);
+	std::string getRealCoordinateString(const tdv::nuitrack::Joint& joint);
 	void onHandUpdate(tdv::nuitrack::HandTrackerData::Ptr handData);
 	void onNewGesture(tdv::nuitrack::GestureData::Ptr gestureData);
 	void onIssuesUpdate(tdv::nuitrack::IssuesData::Ptr issuesData);
