@@ -334,7 +334,7 @@ void NuitrackGLSample::sendSkeletonViaUdp(const int skeleton_id, const std::vect
 
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(12345);
-	addr.sin_addr.s_addr = inet_addr("192.168.0.5");
+	addr.sin_addr.s_addr = inet_addr("0.0.0.0");
 
 	// Create data for a skeleton
 	std::stringstream ss;
